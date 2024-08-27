@@ -27,7 +27,7 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
 
-    # Connect to GrafikEye 3000 using Telnet
+    # Connect to GrafikEye controller using Telnet
     grafik_eye = GrafikEyeController(
         discovery_info.get("host"),
         **{k: v for k, v in discovery_info.items() if k in ["port", "login"]},
