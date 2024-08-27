@@ -1,6 +1,6 @@
 {
     "domain": "grafik_eye",
-    "name": "Example Load Platform",
+    "name": "Grafik Eye 3000",
     "documentation": "https://github.com/home-assistant/example-custom-config/tree/master/custom_components/example_load_platform/",
     "dependencies": [],
     "codeowners": [],
