@@ -48,10 +48,12 @@ class GrafikEye:
         await self.reader.readuntil(b"login: ")
         self.writer.write(self._login + "\r\n")
         res = await self.reader.readuntil(b"connection established\r\n")
-        if b"login incorrect" in res or b"connection in use" in res:
-            _LOGGER.error("Telnet login failed or connection in use")
+        if b"login incorrect" in res:
+            _LOGGER.error("(%s:%d) Grafik Eye login incorrect", self._host, self._port)
+        elif b"connection in use" in res:
+            _LOGGER.error("(%s:%d) Grafik Eye login in use", self._host, self._port)
         else:
-            _LOGGER.info(f"Connected to Grafik Eye using Telnet")
+            _LOGGER.info("(%s:%d) Connected to Grafik Eye", self._host, self._port)
 
         # Start task
         asyncio.create_task(self._request_scenes_task())
@@ -101,4 +103,11 @@ class GrafikEye:
         try:
             self.writer.write(command + "\r\n")
         except Exception as e:
-            _LOGGER.error(f"Could not execute command: {e}")
+            _LOGGER.error(
+                "(%s:%d) Error executing command %s: %s",
+                self._host,
+                self._port,
+                command,
+                e,
+            )
+            raise e

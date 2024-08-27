@@ -101,7 +101,9 @@ class GrafikEyeSceneSelectEntity(SelectEntity):
                 self.async_write_ha_state()
             else:
                 _LOGGER.warning(
-                    "Unsupported scene %s for control unit %d",
+                    "(%s:%d) Unsupported scene %s for control unit %d",
+                    self._grafik_eye._host,
+                    self._grafik_eye._port,
                     scene_id,
                     self._control_unit_id,
                 )
