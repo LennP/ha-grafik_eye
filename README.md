@@ -11,7 +11,7 @@ The integration is configured using the `configuration.yaml` file.
 grafik_eye:
   login: nwk # default login, or nkw2
   ip: 192.168.178.14
-  port: 23 # default telnet port
+  port: 23 # default Telnet port
   control_units:
     - name: Living room
       id: 1
