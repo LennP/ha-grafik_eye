@@ -3,23 +3,28 @@
 from __future__ import annotations
 
 import asyncio
-
 import logging
 import re
-from signal import SIGPIPE, SIG_DFL, signal
-from homeassistant.const import EntityCategory
+from asyncio import Lock
+from collections.abc import Callable
+from datetime import datetime
+from signal import SIG_DFL, SIGPIPE, signal
 
 import telnetlib3
-from asyncio import Lock
 from telnetlib3 import TelnetReader, TelnetWriter
+
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from collections.abc import Callable
-from datetime import datetime
 
-from .const import DOMAIN, DISPLAY_NAME, PROCESSING_TIME_IGNORE_CALLBACK, UPDATE_INTERVAL
+from .const import (
+    DISPLAY_NAME,
+    DOMAIN,
+    PROCESSING_TIME_IGNORE_CALLBACK,
+    UPDATE_INTERVAL,
+)
 
 LOGGER = logging.getLogger(__package__)
 
@@ -80,8 +85,6 @@ class TelnetConnection:
 
     async def connect(self):
         """Connect to control unit."""
-        # async with self.managed_sigpipe():
-        # try:
         self.reader, self.writer = await telnetlib3.open_connection(
             host=self._host, port=self._port, connect_minwait=1.0
         )
@@ -96,8 +99,12 @@ class TelnetConnection:
         # Start task
         asyncio.create_task(self._request_scenes_task())
 
-        # except Exception as e:
-        #     LOGGER.error(f"Could not connect to telnet at {self._telnet_host}:{self._telnet_port}: {e}")
+    def select_scene(self, scene: str, control_units: int | list[int]) -> None:
+        """Select a scene on the specified control units."""
+        control_units_str = (
+            control_units if isinstance(control_units, int) else "".join(control_units)
+        )
+        self._send_command(f"A{scene}{control_units_str}")
 
     def register_scene_callback(
         self, control_unit_id: int, scene_callback: Callable[[str], None]
@@ -114,20 +121,6 @@ class TelnetConnection:
                     for scene_callback in self._scene_callbacks[control_unit_id]:
                         scene_callback(scene_id)
             await asyncio.sleep(UPDATE_INTERVAL.total_seconds())
-
-    def _send_command(self, command: str) -> None:
-        """Send a command to the control unit."""
-        try:
-            self.writer.write(command + "\r\n")
-        except Exception as e:
-            LOGGER.error(f"Could not execute command: {e}")
-
-    def select_scene(self, scene: str, control_units: int | list[int]) -> None:
-        """Select a scene on the specified control units."""
-        control_units_str = (
-            control_units if isinstance(control_units, int) else "".join(control_units)
-        )
-        self._send_command(f"A{scene}{control_units_str}")
 
     async def _request_scenes(self) -> dict[int, str] | None:
         """Request the scene status of all control units on the link."""
@@ -146,14 +139,12 @@ class TelnetConnection:
         else:
             return None
 
-    # @asynccontextmanager
-    # async def managed_sigpipe(self):
-    #     old_handler = signal.getsignal(SIGPIPE)
-    #     signal.signal(SIGPIPE, SIG_DFL)
-    #     try:
-    #         yield
-    #     finally:
-    #         signal.signal(SIGPIPE, old_handler)
+    def _send_command(self, command: str) -> None:
+        """Send a command to the control unit."""
+        try:
+            self.writer.write(command + "\r\n")
+        except Exception as e:
+            LOGGER.error(f"Could not execute command: {e}")
 
 
 class GrafikEye(SelectEntity):
