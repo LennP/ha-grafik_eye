@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .const import DISPLAY_NAME, DOMAIN, PROCESSING_TIME_IGNORE_CALLBACK
-from .grafik_eye import GrafikEye
+from .grafik_eye import GrafikEyeController
 
 _LOGGER = logging.getLogger(__package__)
 
@@ -28,10 +28,9 @@ async def async_setup_platform(
 ) -> None:
 
     # Connect to GrafikEye 3000 using Telnet
-    grafik_eye = GrafikEye(
+    grafik_eye = GrafikEyeController(
         discovery_info.get("host"),
-        discovery_info.get("port", None),
-        discovery_info.get("login", None),
+        **{k: v for k, v in discovery_info.items() if k in ["port", "login"]},
     )
     await grafik_eye.connect()
 
@@ -51,7 +50,7 @@ async def async_setup_platform(
 class GrafikEyeSceneSelectEntity(SelectEntity):
     """Representation of a light select entity."""
 
-    _grafik_eye: GrafikEye
+    _grafik_eye: GrafikEyeController
 
     _control_unit_name: str
     _control_unit_id: int
@@ -62,7 +61,7 @@ class GrafikEyeSceneSelectEntity(SelectEntity):
 
     def __init__(
         self,
-        grafik_eye: GrafikEye,
+        grafik_eye: GrafikEyeController,
         control_unit_name: str,
         control_unit_id: int,
         scenes: dict[str, str],

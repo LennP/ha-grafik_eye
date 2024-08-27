@@ -18,7 +18,7 @@ _LOGGER = logging.getLogger(__package__)
 signal(SIGPIPE, SIG_DFL)
 
 
-class GrafikEye:
+class GrafikEyeController:
     """Telnet connection to a Grafik Eye."""
 
     reader: TelnetReader
@@ -49,11 +49,11 @@ class GrafikEye:
         self.writer.write(self._login + "\r\n")
         res = await self.reader.readuntil(b"connection established\r\n")
         if b"login incorrect" in res:
-            _LOGGER.error("(%s:%d) Grafik Eye login incorrect", self._host, self._port)
+            _LOGGER.error("(%s:%d) Grafik Eye controller login incorrect", self._host, self._port)
         elif b"connection in use" in res:
-            _LOGGER.error("(%s:%d) Grafik Eye login in use", self._host, self._port)
+            _LOGGER.error("(%s:%d) Grafik Eye controller login in use", self._host, self._port)
         else:
-            _LOGGER.info("(%s:%d) Connected to Grafik Eye", self._host, self._port)
+            _LOGGER.info("(%s:%d) Connected to Grafik Eye controller", self._host, self._port)
 
         # Start task
         asyncio.create_task(self._request_scenes_task())
