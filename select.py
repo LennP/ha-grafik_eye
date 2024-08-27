@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from asyncio import Lock
 from datetime import datetime
-from signal import SIG_DFL, SIGPIPE, signal
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.const import EntityCategory
@@ -14,13 +13,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .const import DISPLAY_NAME, DOMAIN, PROCESSING_TIME_IGNORE_CALLBACK
-from .grafik_eye import TelnetConnection
+from .grafik_eye import GrafikEye
 
 _LOGGER = logging.getLogger(__package__)
 
 PARALLEL_UPDATES = 0
-
-signal(SIGPIPE, SIG_DFL)
 
 
 async def async_setup_platform(
@@ -31,17 +28,17 @@ async def async_setup_platform(
 ) -> None:
 
     # Connect to GrafikEye 3000 using Telnet
-    telnet_connection = TelnetConnection(
+    grafik_eye = GrafikEye(
         discovery_info.get("host"),
         discovery_info.get("port", None),
         discovery_info.get("login", None),
     )
-    await telnet_connection.connect()
+    await grafik_eye.connect()
 
     add_entities(
         [
-            GrafikEye(
-                telnet_connection,
+            GrafikEyeSceneSelectEntity(
+                grafik_eye,
                 control_unit["name"],
                 control_unit["id"],
                 {scene["name"]: str(scene["id"]) for scene in discovery_info["scenes"]},
@@ -51,10 +48,10 @@ async def async_setup_platform(
     )
 
 
-class GrafikEye(SelectEntity):
+class GrafikEyeSceneSelectEntity(SelectEntity):
     """Representation of a light select entity."""
 
-    _telnet: TelnetConnection
+    _grafik_eye: GrafikEye
 
     _control_unit_name: str
     _control_unit_id: int
@@ -65,19 +62,18 @@ class GrafikEye(SelectEntity):
 
     def __init__(
         self,
-        telnet: TelnetConnection,
+        grafik_eye: GrafikEye,
         control_unit_name: str,
         control_unit_id: int,
         scenes: dict[str, str],
     ) -> None:
         """Initialize the light select entity."""
-
         self._control_unit_name = control_unit_name
         self._control_unit_id = control_unit_id
         self._scenes = scenes
 
-        self._telnet = telnet
-        self._telnet.register_scene_callback(
+        self._grafik_eye = grafik_eye
+        self._grafik_eye.register_scene_callback(
             self._control_unit_id, self.async_update_scene
         )
         self._lock = Lock()
@@ -113,7 +109,7 @@ class GrafikEye(SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Change the selected light value."""
         async with self._lock:  # Engage the lock
-            self._telnet._send_command(
+            self._grafik_eye._send_command(
                 f"A{self._scenes[option]}{self._control_unit_id}"
             )
             self._attr_current_option = option

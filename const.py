@@ -1,5 +1,7 @@
 """Constants for Grafik Eye 3000 integration."""
 
+from __future__ import annotations
+
 from datetime import timedelta
 
 DOMAIN = "grafik_eye"

@@ -1,8 +1,12 @@
+"""Grafik Eye."""
+
+from __future__ import annotations
 
 import asyncio
 import logging
 import re
 from collections.abc import Callable
+from signal import SIG_DFL, SIGPIPE, signal
 
 import telnetlib3
 from telnetlib3 import TelnetReader, TelnetWriter
@@ -11,8 +15,11 @@ from .const import UPDATE_INTERVAL
 
 _LOGGER = logging.getLogger(__package__)
 
-class TelnetConnection:
-    """Telnet connection to a Grafik Eye control unit."""
+signal(SIGPIPE, SIG_DFL)
+
+
+class GrafikEye:
+    """Telnet connection to a Grafik Eye."""
 
     reader: TelnetReader
     writer: TelnetWriter
@@ -28,13 +35,13 @@ class TelnetConnection:
     STATUS_REGEX = re.compile(r":ss\s([0-9A-FGHMRL]{8,})")
 
     def __init__(self, host: str, port: int = 23, login: str = "nwk2") -> None:
-        """Initialize Telnet connection to the control unit."""
+        """Initialize Telnet connection to the Grafik Eye."""
         self._host = host
         self._port = port
         self._login = login
 
     async def connect(self):
-        """Connect to control unit."""
+        """Connect to the Grafik Eye."""
         self.reader, self.writer = await telnetlib3.open_connection(
             host=self._host, port=self._port, connect_minwait=1.0
         )
