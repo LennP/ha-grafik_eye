@@ -18,7 +18,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from collections.abc import Callable
 
-from .const import DOMAIN, DISPLAY_NAME
+from .const import DOMAIN, DISPLAY_NAME, SCAN_INTERVAL
 
 LOGGER = logging.getLogger(__package__)
 
@@ -103,20 +103,20 @@ class TelnetConnection:
         #     LOGGER.error(f"Could not connect to telnet at {self._telnet_host}:{self._telnet_port}: {e}")
 
     def register_scene_callback(
-        self, control_unit_id: int, callback: Callable[[str], None]
+        self, control_unit_id: int, scene_callback: Callable[[str], None]
     ) -> None:
         """Register a scene callback."""
-        self._scene_callbacks[control_unit_id].append(callback)
+        self._scene_callbacks[control_unit_id].append(scene_callback)
 
     async def _request_scenes_task(self) -> None:
         """Continuously request the scene status."""
         while self._ready:
             status = await self._request_scenes()
             for control_unit_id, scene_id in status.items():
-                for callback in self._scene_callbacks[control_unit_id]:
-                    callback(scene_id)
+                for scene_callback in self._scene_callbacks[control_unit_id]:
+                    scene_callback(scene_id)
 
-            await asyncio.sleep(0.5)  # Sleep for 500 milliseconds
+            await asyncio.sleep(SCAN_INTERVAL)  # Sleep for 500 milliseconds
 
     def _send_command(self, command: str) -> None:
         """Send a command to the control unit."""
