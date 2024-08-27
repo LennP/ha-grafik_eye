@@ -17,14 +17,17 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from collections.abc import Callable
+from datetime import timedelta
 
-from .const import DOMAIN, DISPLAY_NAME, SCAN_INTERVAL
+from .const import DOMAIN, DISPLAY_NAME
 
 LOGGER = logging.getLogger(__package__)
 
 PARALLEL_UPDATES = 0
 
 signal(SIGPIPE, SIG_DFL)
+
+UPDATE_INTERVAL = timedelta(milliseconds=500)
 
 
 async def async_setup_platform(
@@ -96,7 +99,6 @@ class TelnetConnection:
             self._ready = True
 
         # Start task
-        print("Started task")
         asyncio.create_task(self._request_scenes_task())
 
         # except Exception as e:
@@ -110,13 +112,13 @@ class TelnetConnection:
 
     async def _request_scenes_task(self) -> None:
         """Continuously request the scene status."""
-        while self._ready:
+        while True:
             status = await self._request_scenes()
-            for control_unit_id, scene_id in status.items():
-                for scene_callback in self._scene_callbacks[control_unit_id]:
-                    scene_callback(scene_id)
-
-            await asyncio.sleep(SCAN_INTERVAL)  # Sleep for 500 milliseconds
+            if status:
+                for control_unit_id, scene_id in status.items():
+                    for scene_callback in self._scene_callbacks[control_unit_id]:
+                        scene_callback(scene_id)
+            await asyncio.sleep(UPDATE_INTERVAL.total_seconds())
 
     def _send_command(self, command: str) -> None:
         """Send a command to the control unit."""
@@ -142,7 +144,7 @@ class TelnetConnection:
         match = self.STATUS_REGEX.search(status)
         if match:
             statuses = match.group(1)  # '000MMMMM'
-            # Create a dictionary from control unit numbers to their respective statuses
+            # Create a dictionary from control unit ids to their respective scenes
             control_unit_statuses = {
                 (i + 1): status for i, status in enumerate(statuses)
             }
