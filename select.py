@@ -4,16 +4,20 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from signal import SIGPIPE, SIG_DFL, signal
+from homeassistant.const import EntityCategory
 
 import telnetlib3
 from telnetlib3 import TelnetReader, TelnetWriter
-from homeassistant.components.select import SelectEntity
+from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 LOGGER = logging.getLogger(__package__)
-signal(SIGPIPE, SIG_DFL)  # Setting at the module level, consider managing locally if needed elsewhere
+signal(
+    SIGPIPE, SIG_DFL
+)  # Setting at the module level, consider managing locally if needed elsewhere
+
 
 async def async_setup_platform(
     hass: HomeAssistant,
@@ -31,9 +35,17 @@ async def async_setup_platform(
 
     grafik_eyes = []
     for zone in discovery_info["zones"]:
-        grafik_eyes.append(GrafikEye(telnet_connection, zone, discovery_info["scenes"]))
+        grafik_eyes.append(
+            GrafikEye(
+                telnet_connection,
+                zone["name"],
+                zone["code"],
+                {scene["name"]: scene["code"] for scene in discovery_info["scenes"]},
+            )
+        )
 
     add_entities(grafik_eyes)
+
 
 class TelnetConnection:
 
@@ -50,11 +62,8 @@ class TelnetConnection:
         # async with self.managed_sigpipe():
         # try:
         self.reader, self.writer = await telnetlib3.open_connection(
-            host=self._telnet_host,
-            port=self._telnet_port,
-            connect_minwait=1.0
+            host=self._telnet_host, port=self._telnet_port, connect_minwait=1.0
         )
-        self._connection = self.writer
         await self.login()
         # except Exception as e:
         #     LOGGER.error(f"Could not connect to telnet at {self._telnet_host}:{self._telnet_port}: {e}")
@@ -89,22 +98,39 @@ class TelnetConnection:
     #     finally:
     #         signal.signal(SIGPIPE, old_handler)
 
+
 class GrafikEye(SelectEntity):
     """Representation of a light select entity."""
 
-    def __init__(self, telnet: TelnetConnection, zone, scenes):
-        self.icon = "mdi:lightbulb"
-        self._zone_name = zone["name"]
-        self._zone_code = zone["code"]
-        self._attr_current_option = scenes[0]["name"]
-        self._attr_options = [x["name"] for x in scenes]
-        self._scene_codes = [x["code"] for x in scenes]
+    _telnet: TelnetConnection
+
+    _zone_name: str
+    _zone_code: int
+    _scenes: dict[str, int]
+
+    def __init__(
+        self, telnet: TelnetConnection, zone_name: str, zone_code: int, scenes: dict[str, int]
+    ) -> None:
+        """Initialize the light select entity."""
         self._telnet = telnet
+        self._zone_name = zone_name
+        self._zone_code = zone_code
+        self._scenes = scenes
 
-    @property
-    def name(self) -> str:
-        return f"Grafik Eye 3000: {self._zone_name}"
+        self.unique_id = f"grafik_eye_{zone_name.lower()}"
+        self._attr_current_option = list(scenes.keys())[0]
+        self.entity_description = SelectEntityDescription(
+            key="grafik_eye",
+            name=f"Grafik Eye 3000: {self._zone_name}",
+            entity_category=EntityCategory.CONFIG,
+            icon="mdi:lightbulb",
+            options=list(scenes.keys()),
+        )
 
-    async def async_select_option(self, option: str):
+    async def async_select_option(self, option: str) -> None:
+        """Change the selected light value."""
+        self._telnet.execute(
+            f"A{self._scenes[option]}{self._zone_code}"
+        )
         self._attr_current_option = option
-        self._telnet.execute(f"A{self._scene_codes[self._attr_options.index(option)]}{self._zone_code}")
+        self.async_write_ha_state()
