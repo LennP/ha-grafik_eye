@@ -43,11 +43,11 @@ async def async_setup_platform(
         [
             GrafikEye(
                 telnet_connection,
-                zone["name"],
-                zone["id"],
+                control_unit["name"],
+                control_unit["id"],
                 {scene["name"]: scene["id"] for scene in discovery_info["scenes"]},
             )
-            for zone in discovery_info["zones"]
+            for control_unit in discovery_info["control_units"]
         ]
     )
 
@@ -119,35 +119,35 @@ class GrafikEye(SelectEntity):
 
     _telnet: TelnetConnection
 
-    _zone_name: str
-    _zone_id: int
+    _control_unit_name: str
+    _control_unit_id: int
     _scenes: dict[str, int]
 
     def __init__(
         self,
         telnet: TelnetConnection,
-        zone_name: str,
-        zone_id: int,
+        control_unit_name: str,
+        control_unit_id: int,
         scenes: dict[str, int],
     ) -> None:
         """Initialize the light select entity."""
         self._telnet = telnet
-        self._zone_name = zone_name
-        self._zone_id = zone_id
+        self._control_unit_name = control_unit_name
+        self._control_unit_id = control_unit_id
         self._scenes = scenes
 
-        self.unique_id = f"{DOMAIN}_{zone_name.lower()}"
+        self.unique_id = f"{DOMAIN}_{control_unit_name.lower()}"
         self._attr_current_option = list(scenes.keys())[0]
         self.entity_description = SelectEntityDescription(
             key=DOMAIN,
             translation_key=DOMAIN,
-            name=DISPLAY_NAME.format(zone_name=self._zone_name),
+            name=DISPLAY_NAME.format(control_unit_name=self._control_unit_name),
             entity_category=EntityCategory.CONFIG,
             options=list(scenes.keys()),
         )
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected light value."""
-        self._telnet._send_command(f"A{self._scenes[option]}{self._zone_id}")
+        self._telnet._send_command(f"A{self._scenes[option]}{self._control_unit_id}")
         self._attr_current_option = option
         self.async_write_ha_state()
