@@ -97,8 +97,7 @@ class TelnetConnection:
         if b"login incorrect" in res or b"connection in use" in res:
             LOGGER.error("Telnet login failed or connection in use")
         else:
-            LOGGER.info(f"Connected to GrafikEye using Telnet")
-            self._ready = True
+            LOGGER.info(f"Connected to Grafik Eye using Telnet")
 
         # Start task
         asyncio.create_task(self._request_scenes_task())
@@ -124,12 +123,10 @@ class TelnetConnection:
 
     def _send_command(self, command: str) -> None:
         """Send a command to the control unit."""
-        if self._ready:
-            try:
-                self.writer.write(command + "\r\n")
-            except Exception as e:
-                LOGGER.error(f"Could not execute command: {e}")
-                self._ready = False
+        try:
+            self.writer.write(command + "\r\n")
+        except Exception as e:
+            LOGGER.error(f"Could not execute command: {e}")
 
     def select_scene(self, scene: str, control_units: int | list[int]) -> None:
         """Select a scene on the specified control units."""
