@@ -72,7 +72,9 @@ class TelnetConnection:
 
     _ready: bool = False
 
-    _scene_callbacks: dict[int, list[Callable[[str], None]]] = {i+1: [] for i in range(8)}
+    _scene_callbacks: dict[int, list[Callable[[str], None]]] = {
+        i + 1: [] for i in range(8)
+    }
 
     STATUS_REGEX = re.compile(r":ss\s([0-9A-FGHMRL]{8,})")
 
@@ -187,7 +189,9 @@ class GrafikEye(SelectEntity):
         self._scenes = scenes
 
         self._telnet = telnet
-        self._telnet.register_scene_callback(self._control_unit_id, self.async_update_scene)
+        self._telnet.register_scene_callback(
+            self._control_unit_id, self.async_update_scene
+        )
         self._lock = Lock()
 
         self.unique_id = f"{DOMAIN}_{control_unit_name.lower()}"
@@ -209,11 +213,17 @@ class GrafikEye(SelectEntity):
                 self._attr_current_option = scene_id_to_name[scene_id]
                 self.async_write_ha_state()
             else:
-                LOGGER.warning("Unsupported scene %s for control unit %d", scene_id, self._control_unit_id)
+                LOGGER.warning(
+                    "Unsupported scene %s for control unit %d",
+                    scene_id,
+                    self._control_unit_id,
+                )
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected light value."""
         async with self._lock:  # Engage the lock
-            self._telnet._send_command(f"A{self._scenes[option]}{self._control_unit_id}")
+            self._telnet._send_command(
+                f"A{self._scenes[option]}{self._control_unit_id}"
+            )
             self._attr_current_option = option
             self.async_write_ha_state()
