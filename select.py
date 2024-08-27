@@ -44,8 +44,6 @@ async def async_setup_platform(
         discovery_info.get("login", None),
     )
     await telnet_connection.connect()
-    if not telnet_connection._ready:
-        return
 
     add_entities(
         [
@@ -69,8 +67,6 @@ class TelnetConnection:
     _host: str
     _port: int
     _login: str
-
-    _ready: bool = False
 
     _scene_callbacks: dict[int, list[Callable[[str], None]]] = {
         i + 1: [] for i in range(8)
