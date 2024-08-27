@@ -1,10 +1,9 @@
 {
-    "domain": "grafik_eye",
-    "name": "Grafik Eye 3000",
-    "documentation": "https://github.com/home-assistant/example-custom-config/tree/master/custom_components/example_load_platform/",
-    "dependencies": [],
-    "codeowners": [],
-    "requirements": [],
-    "iot_class": "local_polling",
-    "version": "0.1.0"
+  "domain": "grafik_eye",
+  "name": "Grafik Eye 3000",
+  "documentation": "https://github.com/LennP/ha-grafik_eye",
+  "codeowners": ["@LennP"],
+  "iot_class": "local_polling",
+  "requirements": ["motionblindsble==2.0.4"],
+  "version": "0.1.0"
 }
