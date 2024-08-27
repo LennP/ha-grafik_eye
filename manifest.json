@@ -2,7 +2,7 @@
   "domain": "grafik_eye",
   "name": "Grafik Eye 3000",
   "codeowners": ["@LennP"],
-  "documentation": "https://www.home-assistant.io/integrations/grafik_eye",
+  "documentation": "https://github.com/LennP/ha-grafik_eye",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/LennP/ha-grafik_eye",
   "requirements": ["motionblindsble==2.0.4"],
