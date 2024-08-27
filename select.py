@@ -9,11 +9,11 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from telnetlib import Telnet
 from signal import SIGPIPE, SIG_DFL, signal
-
-from .const import *
+import logging
 
 signal(SIGPIPE, SIG_DFL)
 
+LOGGER = logging.getLogger(__package__)
 
 async def async_setup_platform(
     hass: HomeAssistant,
@@ -22,9 +22,6 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
     """Set up the sensor pl atform."""
-    # We only want this platform to be set up via discovery.
-    if discovery_info is None:
-        return
 
     # Create one telnet connection
     telnet_connection = TelnetConnection(discovery_info)
@@ -94,10 +91,10 @@ class GrafikEye(SelectEntity):
 
     def __init__(self, telnet: TelnetConnection, zone, scenes) -> None:
         """Initialize the sensor."""
-        self._zonename = zone["name"]
-        self._zonecode = zone["code"]
+        self._zone_name = zone["name"]
+        self._zone_code = zone["code"]
 
-        self._attr_current_option = "Scene 1"
+        self._attr_current_option = scenes[0]["name"]
         self._attr_options = [x["name"] for x in scenes]
         self._scenecodes = [x["code"] for x in scenes]
 
@@ -106,10 +103,11 @@ class GrafikEye(SelectEntity):
     @property
     def name(self) -> str:
         """Return the name of the sensor."""
-        return f"Grafik Eye 3000: {self._zonename}"
+        return f"Grafik Eye 3000: {self._zone_name}"
 
     def select_option(self, option: str) -> None:
         """Change selected option"""
+        self._attr_current_option = option
         self._telnet.execute(
-            f"A{self._scenecodes[self._attr_options.index(option)]}{self._zonecode}"
+            f"A{self._scenecodes[self._attr_options.index(option)]}{self._zone_code}"
         )
