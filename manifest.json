@@ -5,6 +5,6 @@
   "documentation": "https://github.com/LennP/ha-grafik_eye",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/LennP/ha-grafik_eye",
-  "requirements": ["telnetlit3==2.0.4"],
+  "requirements": ["telnetlib3==2.0.4"],
   "version": "0.1.0"
 }
