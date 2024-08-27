@@ -1,4 +1,5 @@
 """Platform for sensor integration."""
+
 from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
@@ -31,10 +32,9 @@ async def async_setup_platform(
         return
 
     grafik_eyes = []
-    scenes_info = discovery_info["scenes"]
 
     for zone in discovery_info["zones"]:
-        grafik_eyes.append(GrafikEye(telnet_connection, zone, scenes_info))
+        grafik_eyes.append(GrafikEye(telnet_connection, zone, discovery_info["scenes"]))
 
     add_entities(grafik_eyes)
 
@@ -70,8 +70,7 @@ class TelnetConnection:
     def login(self) -> None:
         try:
             self._connection.read_until(b"login: ", 3)
-            self._connection.write(
-                str(self._telnet_login + "\r\n").encode("ascii"))
+            self._connection.write(str(self._telnet_login + "\r\n").encode("ascii"))
             res = self._connection.read_until(b"connection established\r\n", 1)
             if res == b"\r\nlogin incorrect\r\n\r\nlogin: ":
                 LOGGER.error("Telnet login incorrect")
@@ -80,8 +79,7 @@ class TelnetConnection:
             else:
                 self.ready = True
         except:
-            LOGGER.error(
-                f"Could not login with login code {self._telnet_login}")
+            LOGGER.error(f"Could not login with login code {self._telnet_login}")
 
     def execute(self, command: str) -> None:
         try:
