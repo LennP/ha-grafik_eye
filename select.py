@@ -63,12 +63,11 @@ class TelnetConnection:
 
     _ready: bool = False
 
-    def __init__(self, info) -> None:
+    def __init__(self, host: str, port: int = 23, login: str = "nwk2") -> None:
         """Initialize Telnet connection."""
-        self._host = info.get("host")
-        self._telnet_port = info.get("port", 23)
-        self._telnet_login: str = info.get("login", "nwk2")
-        self._ready = False
+        self._host = host
+        self._port = port
+        self._login = login
 
     async def connect(self):
         """Connect to GrafikEye 3000."""
