@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from collections.abc import Callable
-from datetime import timedelta, datetime
+from datetime import datetime
 
 from .const import DOMAIN, DISPLAY_NAME, PROCESSING_TIME_IGNORE_CALLBACK, UPDATE_INTERVAL
 
@@ -201,7 +201,7 @@ class GrafikEye(SelectEntity):
     def async_update_scene(self, scene_id: str) -> None:
         """Update the selected light value."""
         if not self._lock.locked():  # Check if the lock is not engaged
-            if datetime.now() - self._last_select < :
+            if datetime.now() - self._last_select < PROCESSING_TIME_IGNORE_CALLBACK:
                 return
 
             scene_id_to_name = {v: k for k, v in self._scenes.items()}
