@@ -1,4 +1,4 @@
-"""Grafik Eye integration."""
+"""Grafik Eye 3000 integration."""
 
 from __future__ import annotations
 
@@ -11,11 +11,10 @@ from .const import DOMAIN
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Your controller/hub specific code."""
+    """Set up Grafik Eye 3000 integration."""
 
     hass.async_create_task(
         async_load_platform(hass, Platform.SELECT, DOMAIN, config[DOMAIN], config)
     )
-    print("aaaa")
 
     return True

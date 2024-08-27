@@ -1,8 +1,8 @@
+"""Select entities for the Grafik Eye 3000 integration."""
+
 from __future__ import annotations
 
-import asyncio
 import logging
-from contextlib import asynccontextmanager
 from signal import SIGPIPE, SIG_DFL, signal
 from homeassistant.const import EntityCategory
 
@@ -16,9 +16,10 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from .const import DOMAIN, DISPLAY_NAME
 
 LOGGER = logging.getLogger(__package__)
-signal(
-    SIGPIPE, SIG_DFL
-)  # Setting at the module level, consider managing locally if needed elsewhere
+
+PARALLEL_UPDATES = 0
+
+signal(SIGPIPE, SIG_DFL)
 
 
 async def async_setup_platform(
@@ -27,26 +28,28 @@ async def async_setup_platform(
     add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
-    if discovery_info is None:
-        return
 
-    telnet_connection = TelnetConnection(discovery_info)
+    # Connect to GrafikEye 3000 using Telnet
+    telnet_connection = TelnetConnection(
+        discovery_info.get("host"),
+        discovery_info.get("port", None),
+        discovery_info.get("login", None),
+    )
     await telnet_connection.connect()
-    if not telnet_connection.ready:
+    if not telnet_connection._ready:
         return
 
-    grafik_eyes = []
-    for zone in discovery_info["zones"]:
-        grafik_eyes.append(
+    add_entities(
+        [
             GrafikEye(
                 telnet_connection,
                 zone["name"],
                 zone["code"],
                 {scene["name"]: scene["code"] for scene in discovery_info["scenes"]},
             )
-        )
-
-    add_entities(grafik_eyes)
+            for zone in discovery_info["zones"]
+        ]
+    )
 
 
 class TelnetConnection:
@@ -54,17 +57,25 @@ class TelnetConnection:
     reader: TelnetReader
     writer: TelnetWriter
 
+    _host: str
+    _port: int
+    _login: str
+
+    _ready: bool = False
+
     def __init__(self, info) -> None:
-        self.ready = False
-        self._telnet_host = info.get("ip", "192.168.178.14")
+        """Initialize Telnet connection."""
+        self._host = info.get("host")
         self._telnet_port = info.get("port", 23)
         self._telnet_login: str = info.get("login", "nwk2")
+        self._ready = False
 
     async def connect(self):
+        """Connect to GrafikEye 3000."""
         # async with self.managed_sigpipe():
         # try:
         self.reader, self.writer = await telnetlib3.open_connection(
-            host=self._telnet_host, port=self._telnet_port, connect_minwait=1.0
+            host=self._host, port=self._port, connect_minwait=1.0
         )
         await self.login()
         # except Exception as e:
@@ -79,17 +90,17 @@ class TelnetConnection:
             LOGGER.error("Telnet login failed or connection in use")
         else:
             LOGGER.info(f"Connected to GrafikEye using Telnet")
-            self.ready = True
+            self._ready = True
         # except Exception as e:
         #     LOGGER.error(f"Could not login with login code {self._telnet_login}: {e}")
 
     def execute(self, command: str):
-        if self.ready:
+        if self._ready:
             try:
                 self.writer.write(command + "\r\n")
             except Exception as e:
                 LOGGER.error(f"Could not execute command: {e}")
-                self.ready = False
+                self._ready = False
 
     # @asynccontextmanager
     # async def managed_sigpipe(self):
@@ -111,7 +122,11 @@ class GrafikEye(SelectEntity):
     _scenes: dict[str, int]
 
     def __init__(
-        self, telnet: TelnetConnection, zone_name: str, zone_code: int, scenes: dict[str, int]
+        self,
+        telnet: TelnetConnection,
+        zone_name: str,
+        zone_code: int,
+        scenes: dict[str, int],
     ) -> None:
         """Initialize the light select entity."""
         self._telnet = telnet
@@ -131,8 +146,6 @@ class GrafikEye(SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Change the selected light value."""
-        self._telnet.execute(
-            f"A{self._scenes[option]}{self._zone_code}"
-        )
+        self._telnet.execute(f"A{self._scenes[option]}{self._zone_code}")
         self._attr_current_option = option
         self.async_write_ha_state()
