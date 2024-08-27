@@ -2,21 +2,21 @@ grafik_eye:
   login: nwk
   ip: 192.168.178.14
   port: 23
-  zones:
+  control_units:
     - name: Woonkamer
-      code: 1
+      id: 1
     - name: Keuken
-      code: 2
+      id: 2
     - name: Veranda
-      code: 3
+      id: 3
   scenes:
-    - name: Scene 1
-      code: 1
-    - name: Scene 2
-      code: 2
-    - name: Scene 3
-      code: 3
-    - name: Scene 4
-      code: 4
     - name: Uit
-      code: 0
+      id: 0
+    - name: Scene 1
+      id: 1
+    - name: Scene 2
+      id: 2
+    - name: Scene 3
+      id: 3
+    - name: Scene 4
+      id: 4
