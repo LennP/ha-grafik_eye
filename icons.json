@@ -1,0 +1,9 @@
+{
+  "entity": {
+    "select": {
+      "grafik_eye": {
+        "default": "mdi:lightbulb"
+      }
+    }
+  }
+}

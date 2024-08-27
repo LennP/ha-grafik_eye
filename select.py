@@ -13,6 +13,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
+from .const import DOMAIN
+
 LOGGER = logging.getLogger(__package__)
 signal(
     SIGPIPE, SIG_DFL
@@ -117,13 +119,13 @@ class GrafikEye(SelectEntity):
         self._zone_code = zone_code
         self._scenes = scenes
 
-        self.unique_id = f"grafik_eye_{zone_name.lower()}"
+        self.unique_id = f"{DOMAIN}_{zone_name.lower()}"
         self._attr_current_option = list(scenes.keys())[0]
         self.entity_description = SelectEntityDescription(
-            key="grafik_eye",
+            key=DOMAIN,
+            translation_key=DOMAIN,
             name=f"Grafik Eye 3000: {self._zone_name}",
             entity_category=EntityCategory.CONFIG,
-            icon="mdi:lightbulb",
             options=list(scenes.keys()),
         )
 
