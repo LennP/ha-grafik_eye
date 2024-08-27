@@ -1,4 +1,4 @@
-"""Grafik Eye."""
+"""Grafik Eye controller."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ signal(SIGPIPE, SIG_DFL)
 
 
 class GrafikEyeController:
-    """Telnet connection to a Grafik Eye."""
+    """Telnet connection to a Grafik Eye controller."""
 
     reader: TelnetReader
     writer: TelnetWriter
@@ -35,13 +35,13 @@ class GrafikEyeController:
     STATUS_REGEX = re.compile(r":ss\s([0-9A-FGHMRL]{8,})")
 
     def __init__(self, host: str, port: int = 23, login: str = "nwk2") -> None:
-        """Initialize Telnet connection to the Grafik Eye."""
+        """Initialize Telnet connection to the Grafik Eye controller."""
         self._host = host
         self._port = port
         self._login = login
 
     async def connect(self):
-        """Connect to the Grafik Eye."""
+        """Connect to the Grafik Eye controller."""
         self.reader, self.writer = await telnetlib3.open_connection(
             host=self._host, port=self._port, connect_minwait=1.0
         )
